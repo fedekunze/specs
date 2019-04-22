@@ -1,22 +1,22 @@
 # A Slashing Insurance Scheme for BPoS
 
-**Author**: Federico Kunze <federico@tendermint.com>
+**Author**: Federico Kunze - <federico@tendermint.com>
 
 **Date**: April 22, 2019
 
 ## Abstract
 
-The current proposal aims to create an insurance mechanism that refunds delegators in case one of her delegated validators is slashed. This model effectively provides incentive for both validators and delegators by providing them another source of revenue and solving risk averse holding strategies.  
+The current proposal aims to create an insurance mechanism that refunds delegators in case one of her delegated validators is slashed. This model effectively provides incentive for both validators and delegators by providing them another source of revenue and solving risk averse holding strategies.
 
 ## Problem
 
 ### Delegator risk aversion due to slashing
 
-Part of the security of the Cosmos Hub, involves that once a validator gets slashed due to any of the conditions of the network, the delegator bond also gets slashed.
+Part of the security of the Cosmos Hub, involves that once a validator gets slashed due to an infraction (eg: double slashing or downtime), the delegator bond also gets slashed.
 
 This outcome can prevent risk averse users from delegating their staking tokens (`ATOM` in the Cosmos Hub), even when their tokens get diluted due to inflation.
 
-Also, while some validators or wallets could already implement insurance for their users using an off-chain implementation (either using cryptocurrencies or fiat), this is not as desirable as having it enforced in-protocol. This is because the insurance terms might not be publicly available, differences in regulatory legislations can have different outcomes and that there's no transfarent way to check if the issuer had enough funds to pay for the insurance at a given date.
+ Even though validators or wallets could already implement insurance for their users using an off-chain implementation (either using cryptocurrencies or fiat), this is not as desirable as having it enforced in-protocol. This is because the insurance terms might not be publicly available, differences in regulatory legislations can have different outcomes and that there's no transparent way to check if the issuer had enough funds to pay for the insurance at a given date.
 
 ### Network Security
 
@@ -36,9 +36,9 @@ This model could also help raise the mentioned percentage as until now there was
 
 ## Proposal: Slashing Insurance
 
-The proposed solution for this problem is creating an in-protocol insurance mechanism that refunds delegators in the event of slashing.
+The proposed solution for this problem to create an in-protocol insurance mechanism that refunds delegators in the event of slashing.
 
-- Validators issue new insurance terms, each of which contain a `Price` (which could be defined in `ATOM` or another coin denomination), `Duration` for which the insurance is active, `SlashingInfractions` for which infractions does the insurance terms apply and the `Coverage` percentage if a slashing occurs. 
+- Validators issue new insurance terms, each of which contain a `Price` (which could be defined in `ATOM` or another coin denomination), `Duration` for which the insurance is active, `SlashingInfractions` for which infractions does the insurance terms apply and the `Coverage` percentage if a slashing occurs.
 
 - Delegators buy these insurances from validators. This insurance is due once the duration period ends.
 
@@ -46,8 +46,7 @@ The proposed solution for this problem is creating an in-protocol insurance mech
 
 - In the event of slashing, refunds are payed to each delegator,  from oldest to newest issuance date of the insurance (i.e by using a FIFO queue).
 
-- Each delegator gets payed  $refund = SlashingInfraction \times Validator.Power \times Coverage​$ `(1)`, which is deducted from the validator operator's balance.
-  - Were `SlashingCondition` is a reference to a slashing parameter (eg. double sign, downtime, etc).
+- Each delegator gets payed  `refund = SlashingInfraction * Validator.Power * Coverage​$ (1)`, which is deducted from the validator operator's balance, where `SlashingCondition` is a reference to the value of the slashing infraction parameter.
 
 ## Specification
 
@@ -65,13 +64,12 @@ type InsuranceTerm struct {
   Duration            time.Duration   // duration of the insurance coverage
   SlashingInfractions []Infraction    // for which slashing condition (param) this term applies
 }
-
 ```
 
 Once a delegator buys (therefore accepts) the terms, it creates a "contract" between her and the validator, that refunds `Coverange` % of the amount slashed while the insurance is active. This `Insurance` contract is due on `EndDate`, were `EndDate = StartDate + Term.Duration`.
 
 ```go
-type Insurance struct { 
+type Insurance struct {
   Delegator   sdk.AccAddress // address of the buyer
   Validator   sdk.ValAddress // address of the insurer validator
   StartDate   time.Time      // start date of the insurance
@@ -91,7 +89,7 @@ The messages for this module are validator and delegator specific that handle th
 
 - `MsgDeleteInsuranceTerm`: Delete an existing `InsuranceTerm`from the validator.
 
-> **Note**: `MsgEditInsuranceTerm` and  `MsgDeleteInsuranceTerm`changes won't affect delegators who already purchased or subscribed to the insurance original terms. 
+> **Note**: `MsgEditInsuranceTerm` and  `MsgDeleteInsuranceTerm`changes won't affect delegators who already purchased or subscribed to the insurance original terms.
 
 #### Delegator Specific Msgs
 
@@ -106,7 +104,7 @@ Below are further ideas for improvements to this model that could be instresting
 1. **Subscription Service**: This model could eventually be extended in the future through on-chain subscription services. The delegator could pay a periodical subscription fee (that may or may not be equal to the `Term.Price`) This would imply creating new handlers and message types for subscribing and unsubscribing the insurance. 
 2. **Update Insurance**: In case a user wants to upgrade or downgrade his current insurance tier to comply with other terms.
 3. **Slashing Curves**: the idea of slashing curves is that validators get slashed with an amount that is a function of their power weight. The current specification of insurance should be compatible with a slashing cuve implementation.
-4. **Acummulative Refunds**: if the validator is slashed multiple times, one could add a weight to the refund amount. 
+4. **Acummulative Refunds**: if the validator is slashed multiple times, one could add a weight to the refund amount.
 
 ## FAQ
 
@@ -130,9 +128,9 @@ See the [slashing specification](<https://cosmos.network/docs/spec/slashing/>) a
 
 We can somewhat mitigate this case by setting a cap on the validator's total number of insurances contracts signed with delegators based on the validator's self-bond balance.  
 
-Given a validator liability for the total refund amount  $Total Refund  =\sum_{i=1}^{n} refundᵢ  $, delegators can buy new insurances while $Validator.SelfBond ≥ TotalRefund​$ holds.
+Given a validator liability for the total refund amount  `Total Refund  = ∑ refundᵢ`, delegators can buy new insurances while `Validator.SelfBond ≥ TotalRefund​` holds.
 
-There are two cases to consider, when (1) the validator self bond stays the same or increases, and (2) when her self bond decreases due to self unbond or redelegations.
+There are two cases to consider, when `1.` the validator self bond stays the same or increases, and `2.` when her self bond decreases due to self unbond or redelegations.
 
 1. **Insurer self-bond stays the same or increases**:
 
@@ -140,9 +138,9 @@ There are two cases to consider, when (1) the validator self bond stays the same
 
 2. **Insurer self-bond decreases**:
 
-   If the validator self unbonds or redelegates and the condition above is not met, she won't be able to pay all her obligations to the insured delegators. She still won't be able to accept new insurance contracts until the the condition holds. To prevent this case we can prevent the validator to unbond or redelegate shares worth more than $MaxUnbond = Validator.SelfBond - TotalRefund$ if she has active insurances. This will keep the condition satisffied and thus the validator will have enough funds to refund his insured delegators.
+   If the validator self unbonds or redelegates and the condition above is not met, she won't be able to pay all her obligations to the insured delegators. She still won't be able to accept new insurance contracts until the the condition holds. To prevent this case we can prevent the validator to unbond or redelegate shares worth more than `MaxUnbond = Validator.SelfBond - TotalRefund` if she has active insurances. This will keep the condition satisffied and thus the validator will have enough funds to refund his insured delegators.
 
-### What if a validator with active insurances gets *tombstoned* ?
+### What if a validator with active insurances gets tombstoned ?
 
 After a validator is [tombstombed](<https://cosmos.network/docs/spec/slashing/07_tombstone.html>) due to multiple infractions (eg. double signing), the all insurance contracts to the validator affected are paid and then become finalized. This is because as the validator is kicked from the validator set for an unlimited period of time, delegators need to unbond or redelegate.
 
@@ -151,7 +149,7 @@ After a validator is [tombstombed](<https://cosmos.network/docs/spec/slashing/07
 Jailing (*i.e* getting kicked off the validator set for a certain period of time) can occur due to several conditions:
 
 - due to an infraction (double sign or downtime)
-- if the validator self unbonds and his tokens from shares are now lower than his minimum self-bond: $Validator.Tokens < Validator.MinSelfDelegation​$
+- if the validator self unbonds and his tokens from shares are now lower than his minimum self-bond: `Validator.Tokens < Validator.MinSelfDelegation​`
 
 If the jailing was due to the first, the validator needs to refund the amount defined on each of the insurance terms.
 
