@@ -59,7 +59,7 @@ A validator can create a set of insurance tiers, each one composed by one `Insur
 ```go
 type InsuranceTerm struct {
   ID                  uint64          // ID of the insurance term
-  Coverage           sdk.Dec         // total percent of the amount slashed refunded in case of a slashing event
+  Coverage            sdk.Dec         // total percent of the amount slashed refunded in case of a slashing event
   Price               sdk.Coins       // price of the insurance tier
   Duration            time.Duration   // duration of the insurance coverage
   SlashingInfractions []Infraction    // for which slashing condition (param) this term applies
@@ -93,7 +93,7 @@ The messages for this module are validator and delegator specific that handle th
 
 #### Delegator Specific Msgs
 
-- `MsgBuyInsurance` : buy a `Insurance` with a defined `Term` and  `Price` from a validator.
+- `MsgBuyInsurance`: buy a `Insurance` with a defined `Term` and  `Price` from a validator.
 
 - `MsgExtendInsurance`: extend the `EndDate` of the insurance by `Term.Duration` , paying `Term.Price` to the validator. If the original insurance term is deleted or modified, this will return an error.
 
