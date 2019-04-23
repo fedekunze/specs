@@ -40,7 +40,7 @@ The proposed solution for this problem to create an in-protocol insurance mechan
 
 - Validators issue new insurance terms, each of which contain a `Price` (which could be defined in `ATOM` or another coin denomination), `Duration` for which the insurance is active, `SlashingInfractions` for which infractions does the insurance terms apply and the `Coverage` percentage if a slashing occurs.
 
-- Delegators buy these insurances from validators. This insurance is due once the duration period ends.
+- Delegators buy these insurances from validators **only if they have delegation to the insurer**. This insurance is due once the duration period ends.
 
 - If the insurance term hasn’t change, delegators can extend the duration of their insurance for another period.
 
@@ -108,19 +108,19 @@ Below are further ideas for improvements to this model that could be interesting
 
 ## FAQ
 
-### What if I unbond or redelegate while having an active insurance with the validator ?
+### What if an insured delegator unbonds or redelegates while having an active insurance with a validator ?
 
-In that case the insurance becomes inactive after the unbonding period ends and then is deleted from the state.  
+The insurance will remain active until either the unbonding period or the duration of the insurance ends, after which is deleted from the state. If the unbonding period ends before the insurance duration ends, the delegator is then refunded `refund = Insurance.Term.Price/(EndDate - (UnbondTime + UnbondingPeriod))` for what was left of the active insurance.
 
-However, if an infraction evidence is submitted during the unbonding period, a validator can still get slashed and thus, she still needs to refund the amount committed on the insurance.
+If an infraction evidence is submitted during the unbonding period, the insurer validator can still get slashed and thus, they will need to refund the amount committed on the insurance.
 
 ### What if a validator is slashed multiple times during the lenght of the insurance ?
 
-Every insurance refund needs to be payed every time a slashing is performed on the validator. If the insurer validator is slashed multiple times (before getting tombstoned) she needs to pay for each refund.
+Every insurance refund needs to be payed every time a slashing is performed on the validator. If the insurer validator is slashed multiple times (before getting tombstoned) they need to pay for each refund.
 
 If the validator commits multiple infractions on the same slashing period and before the evidence is discovered, he gets slashed only once, for the one of the highest amount. In consequence, the delegator gets refunded once.
 
-Alternatively, if every infraction is discovered before the next infraction is commited, the validator will have to refund for each of them until she runs out of funds. However, this is still under discussion if whether an insurance should be valid once or multiple times.
+Alternatively, if every infraction is discovered before the next infraction is commited, the validator will have to refund for each of them until they run out of funds. However, this is still under discussion if whether an insurance should be valid once or multiple times.
 
 See the [slashing specification](<https://cosmos.network/docs/spec/slashing/>) and [timelines](<https://cosmos.network/docs/spec/slashing/01_concepts.html#ascii-timelines>) for more details.
 
@@ -130,7 +130,7 @@ We can somewhat mitigate this case by setting a cap on the validator's total num
 
 Given a validator liability for the total refund amount  `Total Refund  = ∑ refundᵢ`, delegators can buy new insurances while `Validator.SelfBond ≥ TotalRefund​` holds.
 
-There are two cases to consider, when `1.` the validator self bond stays the same or increases, and `2.` when her self bond decreases due to self unbond or redelegations.
+There are two cases that can modify this cap, when `1.` the validator self bond stays the same or increases, and `2.` when her self bond decreases due to self unbond or redelegations.
 
 1. **Insurer self-bond stays the same or increases**:
 
@@ -138,7 +138,7 @@ There are two cases to consider, when `1.` the validator self bond stays the sam
 
 2. **Insurer self-bond decreases**:
 
-   If the validator self unbonds or redelegates and the condition above is not met, she won't be able to pay all her obligations to insured delegators. She still won't be able to accept new insurance contracts until the the condition holds. To prevent this case we can prevent the validator from unbonding or redelegating shares worth more than `MaxUnbond = Validator.SelfBond - TotalRefund` if she has active insurances. This will keep the condition satisfied and thus the validator will have enough funds to refund his insured delegators.
+   If the validator self unbonds or redelegates and the condition above is not met, they won't be able to pay all her obligations to insured delegators. They still won't be able to accept new insurance contracts until the the condition holds. To prevent this case we can prevent the validator from unbonding or redelegating shares worth more than `MaxUnbond = Validator.SelfBond - TotalRefund` if they have active insurances. This will keep the condition satisfied and thus the validator will have enough funds to refund his insured delegators.
 
 ### What if a validator with active insurances gets tombstoned ?
 
@@ -153,8 +153,18 @@ Jailing (*i.e* getting kicked off the validator set for a certain period of time
 
 If the jailing was due to the first, the validator needs to refund the amount defined on each of the insurance terms.
 
-### Can a delegator that operates a validator buy an insurance for himself ?
+### Can a delegator that operates a validator "self-buy" an insurance for himself ?
 
-No, because of UX and practical reasons.
+We can't really prevent a validator from self-buying an insurance for himself either by directly buying it or by transfering funds to another account and then buying an insurance.
 
-This should be prevented because  "self-buying" an insurance would mean that the validator also "self-pays" for his refund by transfering the coins to himself (at least once if the validator is not slashed during the duration of the insurance). Additionaly, it would increase the `TotalRefund`  amount for the validator, thus reducing the cap of the total amount of insurances that are available to buy.
+The worst case scenario is desincentiviced for two reasons:
+
+1. **It causes an economic cycle**: "self-buying" an insurance would mean that the validator also "self-pays" for his refund by transfering the coins to himself, which has no economic benefit for them.
+
+2. **It caps new insurances**: as described above, buying an insurance decreases the total amount that the validator is able to refund in case of a slashing event. Thus reducing the cap of the total amount of insurances that are other delegators are able to buy from them, preventing them from getting more income.
+
+### Could this model increase the griefing attack vectors on validators ?
+
+One could buy an insurance from a validator and then have an incentive to attack them in order to claim the refund if the insurer is slashed. However, this is not economically profitable if the slashing amount coverage defined on the insturance terms is lower or equal than 100% because only bonded delegators can buy an insurance from a insurer validator.
+
+It is then recomended that only validators that are highly confident of the sucurity and availability of their setups, and that have succesfully tested them on adversarial testnets such as Game of Stakes, to issue terms with coverage higher than 100%, as they could be subject to these attack vectors.
