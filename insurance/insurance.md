@@ -168,3 +168,7 @@ The worst case scenario is desincentiviced for two reasons:
 One could buy an insurance from a validator and then have an incentive to attack them in order to claim the refund if the insurer is slashed. However, this is not economically profitable if the slashing amount coverage defined on the insturance terms is lower or equal than 100% because only bonded delegators can buy an insurance from a insurer validator.
 
 It is then recomended that only validators that are highly confident of the sucurity and availability of their setups, and that have succesfully tested them on adversarial testnets such as Game of Stakes, to issue terms with coverage higher than 100%, as they could be subject to these attack vectors.
+
+<hr>
+
+Special thanks to Billy Rennekamp for his thoughtful review.
