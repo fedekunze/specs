@@ -12,7 +12,7 @@ The current proposal aims to create an insurance mechanism that refunds delegato
 
 ### Delegator risk aversion due to slashing
 
-Part of the security of the Cosmos Hub, involves that once a validator gets slashed due to an infraction (eg: double slashing or downtime), the delegator bond also gets slashed.
+Part of the security of the Cosmos Hub, involves that once a validator gets slashed due to an infraction (eg: double signing or downtime), the delegator bond also gets slashed.
 
 This outcome can prevent risk averse users from delegating their staking tokens (`ATOM` in the Cosmos Hub), even when their tokens get diluted due to inflation.
 
@@ -59,14 +59,14 @@ A validator can create a set of insurance tiers, each one composed by one `Insur
 ```go
 type InsuranceTerm struct {
   ID                  uint64          // ID of the insurance term
-  Coverange           sdk.Dec         // total percent of the amount slashed refunded in case of a slashing event
+  Coverage           sdk.Dec         // total percent of the amount slashed refunded in case of a slashing event
   Price               sdk.Coins       // price of the insurance tier
   Duration            time.Duration   // duration of the insurance coverage
   SlashingInfractions []Infraction    // for which slashing condition (param) this term applies
 }
 ```
 
-Once a delegator buys (therefore accepts) the terms, it creates a "contract" between her and the validator, that refunds `Coverange` % of the amount slashed while the insurance is active. This `Insurance` contract is due on `EndDate`, were `EndDate = StartDate + Term.Duration`.
+Once a delegator buys (therefore accepts) the terms, it creates a "contract" between her and the validator, that refunds `Coverage` % of the amount slashed while the insurance is active. This `Insurance` contract is due on `EndDate`, were `EndDate = StartDate + Term.Duration`.
 
 ```go
 type Insurance struct {
@@ -99,9 +99,9 @@ The messages for this module are validator and delegator specific that handle th
 
 ## Future Improvements
 
-Below are further ideas for improvements to this model that could be instresting to research and implement while network evolves:
+Below are further ideas for improvements to this model that could be interesting to research and implement while the network evolves:
 
-1. **Subscription Service**: This model could eventually be extended in the future through on-chain subscription services. The delegator could pay a periodical subscription fee (that may or may not be equal to the `Term.Price`) This would imply creating new handlers and message types for subscribing and unsubscribing the insurance. 
+1. **Subscription Service**: This model could eventually be extended in the future through on-chain subscription services. The delegator could pay a periodical subscription fee (that may or may not be equal to the `Term.Price`) This would imply creating new handlers and message types for subscribing and unsubscribing the insurance.
 2. **Update Insurance**: In case a user wants to upgrade or downgrade his current insurance tier to comply with other terms.
 3. **Slashing Curves**: the idea of slashing curves is that validators get slashed with an amount that is a function of their power weight. The current specification of insurance should be compatible with a slashing cuve implementation.
 4. **Acummulative Refunds**: if the validator is slashed multiple times, one could add a weight to the refund amount.
@@ -110,7 +110,7 @@ Below are further ideas for improvements to this model that could be instresting
 
 ### What if I unbond or redelegate while having an active insurance with the validator ?
 
-In that case the insurance becames inactive after the unbonding period ends and then is deleted from the state.  
+In that case the insurance becomes inactive after the unbonding period ends and then is deleted from the state.  
 
 However, if an infraction evidence is submitted during the unbonding period, a validator can still get slashed and thus, she still needs to refund the amount committed on the insurance.
 
@@ -118,15 +118,15 @@ However, if an infraction evidence is submitted during the unbonding period, a v
 
 Every insurance refund needs to be payed every time a slashing is performed on the validator. If the insurer validator is slashed multiple times (before getting tombstoned) she needs to pay for each refund.
 
-If the validator commits multiple infractions on the same slashing period and before the evidence is discovered, he gets slashed only once, for the one of the highest amount. In consequence, the delegator get's refunded once.
+If the validator commits multiple infractions on the same slashing period and before the evidence is discovered, he gets slashed only once, for the one of the highest amount. In consequence, the delegator gets refunded once.
 
 Alternatively, if every infraction is discovered before the next infraction is commited, the validator will have to refund for each of them until she runs out of funds. However, this is still under discussion if whether an insurance should be valid once or multiple times.
 
 See the [slashing specification](<https://cosmos.network/docs/spec/slashing/>) and [timelines](<https://cosmos.network/docs/spec/slashing/01_concepts.html#ascii-timelines>) for more details.
 
-### What happens if the validator doesn't have enough balance to pay for all the insurance refunds ?
+### What happens if the validator doesn't have enough balance to refund all the insurances ?
 
-We can somewhat mitigate this case by setting a cap on the validator's total number of insurances contracts signed with delegators based on the validator's self-bond balance.  
+We can somewhat mitigate this case by setting a cap on the validator's total number of insurance contracts signed with delegators based on the validator's self-bond balance.  
 
 Given a validator liability for the total refund amount  `Total Refund  = ∑ refundᵢ`, delegators can buy new insurances while `Validator.SelfBond ≥ TotalRefund​` holds.
 
@@ -138,11 +138,11 @@ There are two cases to consider, when `1.` the validator self bond stays the sam
 
 2. **Insurer self-bond decreases**:
 
-   If the validator self unbonds or redelegates and the condition above is not met, she won't be able to pay all her obligations to the insured delegators. She still won't be able to accept new insurance contracts until the the condition holds. To prevent this case we can prevent the validator to unbond or redelegate shares worth more than `MaxUnbond = Validator.SelfBond - TotalRefund` if she has active insurances. This will keep the condition satisffied and thus the validator will have enough funds to refund his insured delegators.
+   If the validator self unbonds or redelegates and the condition above is not met, she won't be able to pay all her obligations to insured delegators. She still won't be able to accept new insurance contracts until the the condition holds. To prevent this case we can prevent the validator from unbonding or redelegating shares worth more than `MaxUnbond = Validator.SelfBond - TotalRefund` if she has active insurances. This will keep the condition satisfied and thus the validator will have enough funds to refund his insured delegators.
 
 ### What if a validator with active insurances gets tombstoned ?
 
-After a validator is [tombstombed](<https://cosmos.network/docs/spec/slashing/07_tombstone.html>) due to multiple infractions (eg. double signing), the all insurance contracts to the validator affected are paid and then become finalized. This is because as the validator is kicked from the validator set for an unlimited period of time, delegators need to unbond or redelegate.
+After a validator is [tombstombed](<https://cosmos.network/docs/spec/slashing/07_tombstone.html>) due to multiple infractions (eg. double signing), all the insurance contracts to the validator affected are paid and then become finalized. This is because as the validator is kicked from the validator set for an unlimited period of time, delegators need to unbond or redelegate.
 
 ### What if a validator with active insurances gets jailed ? 
 
