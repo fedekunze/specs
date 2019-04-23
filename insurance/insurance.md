@@ -153,15 +153,15 @@ Jailing (*i.e* getting kicked off the validator set for a certain period of time
 
 If the jailing was due to the first, the validator needs to refund the amount defined on each of the insurance terms.
 
-### Can a delegator that operates a validator "self-buy" an insurance for himself ?
+### Can a delegator that operates a validator "self-buy" an insurance for themself ?
 
-We can't really prevent a validator from self-buying an insurance for himself either by directly buying it or by transfering funds to another account and then buying an insurance.
+We can't really prevent a validator from self-buying an insurance for themsel either by directly buying it or by transfering funds to another account and then buying an insurance.
 
-The worst case scenario is desincentiviced for two reasons:
+Nevertheless, both scenarios are desincentiviced for two reasons:
 
-1. **It causes an economic cycle**: "self-buying" an insurance would mean that the validator also "self-pays" for his refund by transfering the coins to himself, which has no economic benefit for them.
+1. **It causes an economic cycle**: "self-buying" an insurance would mean that the validator also "self-pays" for his refund by transfering the coins to themself, which has no economic benefit for them.
 
-2. **It caps new insurances**: as described above, buying an insurance decreases the total amount that the validator is able to refund in case of a slashing event. Thus reducing the cap of the total amount of insurances that are other delegators are able to buy from them, preventing them from getting more income.
+2. **It caps new insurances**: as described above, buying an insurance decreases the total amount that the validator is able to refund in case of a slashing event. Thus reducing the cap of the total amount of insurances that other delegators are able to buy from them, preventing them from getting more income.
 
 ### Could this model increase the griefing attack vectors on validators ?
 
